@@ -3043,7 +3043,7 @@ public:
     bool
     erase_at_pointer(
         string_view         sv,
-        system::error_code& ec);
+        system::error_code& ec) noexcept;
 
     /// @}
     //------------------------------------------------------
