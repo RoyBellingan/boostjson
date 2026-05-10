@@ -521,13 +521,13 @@ value::set_at_pointer(
 }
 
 bool
-value::erase_at_pointer(
+value::erase_at_pointer (
     string_view         sv,
-    system::error_code& ec)
+    system::error_code& ec) noexcept
 {
     ec.clear();
     if(sv.empty()){
-        BOOST_JSON_FAIL(ec, error::syntax);
+        BOOST_JSON_FAIL(ec, error::missing_slash);
         return false;
     }
 

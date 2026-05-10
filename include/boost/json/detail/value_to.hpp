@@ -12,7 +12,23 @@
 #ifndef BOOST_JSON_DETAIL_VALUE_TO_HPP
 #define BOOST_JSON_DETAIL_VALUE_TO_HPP
 
-#include <boost/core/detail/static_assert.hpp>
+#ifndef BOOST_JSON_INTRUSIVE_INDEX_INC
+#define BOOST_JSON_INTRUSIVE_INDEX_INC ((void)0);
+#endif
+
+#ifndef BOOST_JSON_INTRUSIVE_PATH_PUSH
+#define BOOST_JSON_INTRUSIVE_PATH_PUSH(x) ((void)0);
+#endif
+
+#ifndef BOOST_JSON_INTRUSIVE_PATH_POP
+#define BOOST_JSON_INTRUSIVE_PATH_POP ((void)0);
+#endif
+
+#ifndef BOOST_JSON_INTRUSIVE_MESSAGE
+#define BOOST_JSON_INTRUSIVE_MESSAGE(x) ((void)0);
+#endif
+
+
 #include <boost/json/value.hpp>
 #include <boost/json/conversion.hpp>
 #include <boost/json/result_for.hpp>
@@ -271,13 +287,21 @@ value_to_impl(
     }
 
     auto ins = detail::inserter(result, inserter_implementation<T>());
+
+    BOOST_JSON_INTRUSIVE_PATH_PUSH(-1)
+
     for( value const& val: *arr )
     {
+        BOOST_JSON_INTRUSIVE_INDEX_INC
+
         auto elem_res = try_value_to<value_type<T>>( val, ctx );
         if( elem_res.has_error() )
             return {boost::system::in_place_error, elem_res.error()};
         *ins++ = std::move(*elem_res);
     }
+
+    BOOST_JSON_INTRUSIVE_PATH_POP
+
     return result;
 }
 
@@ -350,10 +374,6 @@ value_to_impl(
 template< class Ctx, class T >
 struct to_described_member
 {
-    static_assert(
-        uniquely_named_members<T>::value,
-        "The type has several described members with the same name.");
-
     using Ds = described_members<T>;
 
     system::result<T>& res;
@@ -378,9 +398,13 @@ struct to_described_member
                 system::error_code ec;
                 BOOST_JSON_FAIL(ec, error::size_mismatch);
                 res = {boost::system::in_place_error, ec};
+                
+                BOOST_JSON_INTRUSIVE_MESSAGE(std::format("the key >> {} << is non optional and missing in path {}", D::name, BOOST_JSON_INTRUSIVE::composePath()));
             }
             return;
         }
+
+        BOOST_JSON_INTRUSIVE_PATH_PUSH(D::name)
 
 #if defined(__GNUC__) && BOOST_GCC_VERSION >= 80000 && BOOST_GCC_VERSION < 11000
 # pragma GCC diagnostic push
@@ -391,8 +415,10 @@ struct to_described_member
 #if defined(__GNUC__) && BOOST_GCC_VERSION >= 80000 && BOOST_GCC_VERSION < 11000
 # pragma GCC diagnostic pop
 #endif
-        if( member_res )
+        if( member_res ){
             (*res).* D::pointer = std::move(*member_res);
+            BOOST_JSON_INTRUSIVE_PATH_POP
+        }
         else
             res = {boost::system::in_place_error, member_res.error()};
     }
@@ -407,7 +433,7 @@ value_to_impl(
     value const& jv,
     Ctx const& ctx )
 {
-    BOOST_CORE_STATIC_ASSERT( std::is_default_constructible<T>::value );
+    BOOST_STATIC_ASSERT( std::is_default_constructible<T>::value );
     system::result<T> res;
 
     auto* obj = jv.if_object();
