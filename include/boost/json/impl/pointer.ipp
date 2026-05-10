@@ -522,7 +522,7 @@ value::set_at_pointer(
 
 bool
 value::erase_at_pointer (
-    string_view         sv,
+    string_view sv,
     system::error_code& ec) noexcept
 {
     ec.clear();

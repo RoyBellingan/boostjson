@@ -10,6 +10,7 @@
 #include <boost/json/value.hpp>
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
+
 #include "test_suite.hpp"
 
 namespace boost {
@@ -407,9 +408,6 @@ public:
         testTry();
         testDigest();
     }
-
-
-
 };
 
 TEST_SUITE(pointer_test, "boost.json.pointer");
